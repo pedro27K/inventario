@@ -1,76 +1,76 @@
 <?php
 include "conexion.php";
 
-$busqueda = $_GET['buscar'] ?? '';
-$orden = $_GET['orden'] ?? 'ASC';
+$textoBuscar = $_GET['buscar'] ?? '';
+$tipoOrden = $_GET['orden'] ?? 'ASC';
 
-/* Consulta con buscador y ordenación */
-$sql = "SELECT * FROM articulos WHERE nombre LIKE ? ORDER BY nombre $orden";
-$stmt = $conexion->prepare($sql);
-$param = "%" . $busqueda . "%";
-$stmt->bind_param("s", $param);
-$stmt->execute();
-$resultado = $stmt->get_result();
+$sql = "SELECT * FROM articulos WHERE nombre LIKE ? ORDER BY nombre $tipoOrden";
+$consulta = $conexion->prepare($sql);
+
+$buscarcomo = "%".$textoBuscar."%";
+$consulta->bind_param("s", $buscarcomo);
+$consulta->execute();
+$datos = $consulta->get_result();
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Inventario</title>
+    <title>Listado de inventario</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>Inventario de artículos</h1>
+<h1>Inventario</h1>
 
-<!-- 🔍 BUSCADOR Y ORDENACIÓN -->
-<form method="get">
-    <input
-        type="text"
-        name="buscar"
-        placeholder="Buscar artículo"
-        value="<?= htmlspecialchars($busqueda) ?>"
-    >
+<form method="GET" action="">
+    <input type="text" name="buscar" placeholder="Escribe para buscar..."
+           value="<?php echo htmlspecialchars($textoBuscar); ?>">
 
     <select name="orden">
-        <option value="ASC" <?= $orden === 'ASC' ? 'selected' : '' ?>>A - Z</option>
-        <option value="DESC" <?= $orden === 'DESC' ? 'selected' : '' ?>>Z - A</option>
+    <option value="ASC" <?= $tipoOrden === 'ASC' ? 'selected' : '' ?>>A - Z</option> 
+    <option value="DESC" <?= $tipoOrden === 'DESC' ? 'selected' : '' ?>>Z - A</option>
     </select>
 
     <button type="submit">Buscar</button>
 </form>
 
-<!-- ➕ AÑADIR ARTÍCULO -->
-<a href="form.php" class="boton-add">➕ Añadir artículo</a>
+<p>
+    <a href="form.php">+ Nuevo artículo</a>
+</p>
 
 <hr>
 
-<!-- 📦 LISTADO DE ARTÍCULOS -->
-<?php if ($resultado->num_rows > 0): ?>
-    <?php while ($art = $resultado->fetch_assoc()): ?>
+<?php
+if($datos->num_rows > 0){
+    while($fila = $datos->fetch_assoc()){
+?>
         <div class="articulo">
 
-            <img src="imagenes/<?= htmlspecialchars($art['imagen']) ?>" alt="Imagen artículo">
+            <img src="imagenes/<?php echo htmlspecialchars($fila['imagen']); ?>" width="100">
 
-            <div class="articulo-info">
-                <strong><?= htmlspecialchars($art['nombre']) ?></strong><br>
-                Stock: <?= htmlspecialchars($art['stock']) ?>
+            <div>
+                <b><?php echo htmlspecialchars($fila['nombre']); ?></b><br>
+                Stock disponible: <?php echo $fila['stock']; ?>
             </div>
 
-            <div class="articulo-acciones">
-                <a href="form.php?id=<?= $art['id'] ?>">✏️ Editar</a>
-                <a href="eliminar.php?id=<?= $art['id'] ?>"
-                   onclick="return confirm('¿Seguro que quieres eliminar este artículo?')">
-                   🗑️ Eliminar
+            <div>
+                <a href="form.php?id=<?php echo $fila['id']; ?>">Editar</a> |
+                <a href="eliminar.php?id=<?php echo $fila['id']; ?>"
+                   onclick="return confirm('¿Eliminar este artículo?');">
+                   Eliminar
                 </a>
             </div>
 
         </div>
-    <?php endwhile; ?>
-<?php else: ?>
-    <p>No se han encontrado artículos.</p>
-<?php endif; ?>
+        <hr>
+<?php
+    }
+}else{
+    echo "<p>No hay artículos registrados.</p>";
+}
+?>
 
 </body>
 </html>
